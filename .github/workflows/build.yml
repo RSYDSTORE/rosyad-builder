@@ -4,20 +4,65 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # <--- IEU KUNCINA! WAJIB 22.04
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Build with Buildozer (Docker)
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: master
-          workdir: .
+      # 1. BERSIHKEUN MEMORI (Supaya teu pinuh)
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      - name: Upload APK
+      # 2. INSTALL BAHAN (Di Ubuntu 22.04 pasti aya)
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            python3-pip \
+            python3-dev \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libncurses5 \
+            libncursesw5 \
+            libtinfo5 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            autoconf \
+            libtool \
+            openjdk-17-jdk
+
+      # 3. INSTALL BUILDOZER
+      - name: Install Buildozer
+        run: |
+          pip3 install --upgrade pip
+          pip3 install buildozer cython==0.29.33 virtualenv
+
+      # 4. DOWNLOAD ICON
+      - name: Download Icon
+        run: wget -O icon.png "https://lh3.googleusercontent.com/d/181EO8tS_ECc0pO9zzk1lr3MsDh_Pbqu7"
+
+      # 5. BUILD APK (Fix Broken Pipe)
+      - name: Build APK
+        run: |
+          yes | buildozer android debug
+
+      # 6. UPLOAD HASIL
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: RosyadStore-APK
