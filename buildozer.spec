@@ -1,11 +1,11 @@
 
 [app]
-title = TOP UP GAME MALEO
-package.name = store.topup
+title = TOP UP BUSSID TRUCKSID SHOP
+package.name = store.topup.games
 package.domain = com.rosyad
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
-version = 7.0
+version = 1.1
 requirements = python3,kivy,android,jnius
 icon.filename = icon.png
 presplash.filename = icon.png
