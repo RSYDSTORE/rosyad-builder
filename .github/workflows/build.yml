@@ -4,12 +4,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # <--- IEU KUNCINA! WAJIB 22.04
+    runs-on: ubuntu-22.04  # <--- WAJIB 22.04 (ULAH UBAH IEU)
     
     steps:
       - uses: actions/checkout@v2
 
-      # 1. BERSIHKEUN MEMORI (Supaya teu pinuh)
+      # 1. BERSIHKEUN MEMORI (Supaya teu error 'Disk Full')
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -17,7 +17,7 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      # 2. INSTALL BAHAN (Di Ubuntu 22.04 pasti aya)
+      # 2. INSTALL ALAT PERANG (VERSI LENGKAP)
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -44,24 +44,37 @@ jobs:
             libssl-dev \
             autoconf \
             libtool \
-            openjdk-17-jdk
+            openjdk-17-jdk \
+            zip \
+            unzip
 
-      # 3. INSTALL BUILDOZER
+      # 3. SETTING JAVA (WAJIB JAVA 17)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 4. INSTALL BUILDOZER & CYTHON
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
-          pip3 install buildozer cython==0.29.33 virtualenv
+          pip3 install buildozer==1.5.0 cython==0.29.33 virtualenv
 
-      # 4. DOWNLOAD ICON
+      # 5. DOWNLOAD ICON
       - name: Download Icon
         run: wget -O icon.png "https://lh3.googleusercontent.com/d/181EO8tS_ECc0pO9zzk1lr3MsDh_Pbqu7"
 
-      # 5. BUILD APK (Fix Broken Pipe)
+      # 6. BUILD APK (FIX BROKEN PIPE)
       - name: Build APK
         run: |
+          # Paksa persetujuan SDK heula supaya teu butuh 'yes |'
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          # Jalankeun Buildozer
           yes | buildozer android debug
 
-      # 6. UPLOAD HASIL
+      # 7. UPLOAD HASIL
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
