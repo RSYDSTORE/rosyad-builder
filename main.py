@@ -7,7 +7,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 
-TARGET_URL = "https://topup-bussid-trucksid-rsyd-store.vercel.app"
+TARGET_URL = "https://www.topupbussidrsydstore.my.id"
 
 class RosyadWebApp(App):
     def build(self):
