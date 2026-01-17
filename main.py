@@ -9,7 +9,7 @@ from kivy.graphics import Color, Rectangle
 
 TARGET_URL = "https://topup-bussid-trucksid-rsyd-store.vercel.app"
 
-# JS BRIDGE (Standard)
+# JS BRIDGE
 JS_BRIDGE = """
 javascript:(function() {
     window.show_rosyad_push_notif = function(t, b) {
@@ -32,87 +32,89 @@ class RosyadWebApp(App):
         if platform == 'android':
             from jnius import autoclass
             from android.permissions import request_permissions, Permission
-            # SAFE REQUEST (V7 STYLE)
-            perms = [
+            # REQUEST SEMUA IZIN SUPAYA LENGKAP
+            request_permissions([
                 Permission.INTERNET, 
                 Permission.POST_NOTIFICATIONS, 
                 Permission.ACCESS_FINE_LOCATION, 
                 Permission.CAMERA, 
+                Permission.WRITE_EXTERNAL_STORAGE, 
                 Permission.READ_MEDIA_IMAGES,
-                Permission.WRITE_EXTERNAL_STORAGE,
                 Permission.RECORD_AUDIO
-            ]
-            try: request_permissions(perms)
-            except: pass
+            ])
             Clock.schedule_once(self.start_webview, 1.5)
         return self.layout
 
     def start_webview(self, dt):
-        # TIMER PENGHANCUR LOADING (5 DETIK)
-        Clock.schedule_once(lambda d: self.layout.remove_widget(self.loading), 5.0)
-        try:
-            from jnius import autoclass, cast, PythonJavaClass, java_method
-            from android.runnable import run_on_ui_thread
-            
-            activity = autoclass('org.kivy.android.PythonActivity').mActivity
-            WebView = autoclass('android.webkit.WebView')
-            WebViewClient = autoclass('android.webkit.WebViewClient')
-            WebChromeClient = autoclass('android.webkit.WebChromeClient')
-            CookieManager = autoclass('android.webkit.CookieManager')
-            
-            # NOTIFIKASI
-            def show_notif(title, body):
-                try:
-                    Context = autoclass('android.content.Context')
-                    NotificationManager = autoclass('android.app.NotificationManager')
-                    NotificationChannel = autoclass('android.app.NotificationChannel')
-                    NotificationCompat = autoclass('androidx.core.app.NotificationCompat$Builder')
-                    service = activity.getSystemService(Context.NOTIFICATION_SERVICE)
-                    manager = cast(NotificationManager, service)
-                    chan = NotificationChannel("default", "Notifikasi", 4)
-                    manager.createNotificationChannel(chan)
-                    icon = activity.getApplicationInfo().icon
-                    builder = NotificationCompat(activity, "default")
-                    builder.setContentTitle(title)
-                    builder.setContentText(body)
-                    builder.setSmallIcon(icon)
-                    builder.setAutoCancel(True)
-                    manager.notify(1, builder.build())
-                except: pass
+        # HAPUS LOADING FORCE (ANTI BLANK)
+        Clock.schedule_once(lambda d: self.layout.remove_widget(self.loading), 3.0)
 
-            class RosyadClient(WebViewClient):
-                @java_method('(Landroid/webkit/WebView;Ljava/lang/String;)Z')
-                def shouldOverrideUrlLoading(self, view, url):
-                    if url.startswith("rosyad://notif"):
-                        try:
-                            from urllib.parse import parse_qs, urlparse
-                            parsed = urlparse(url)
-                            params = parse_qs(parsed.query)
-                            show_notif(params.get('t',[''])[0], params.get('b',[''])[0])
-                        except: pass
-                        return True
-                    return False
-                @java_method('(Landroid/webkit/WebView;Ljava/lang/String;)V')
-                def onPageFinished(self, view, url):
-                    try: view.loadUrl(JS_BRIDGE)
+        from jnius import autoclass, cast, PythonJavaClass, java_method
+        from android.runnable import run_on_ui_thread
+        activity = autoclass('org.kivy.android.PythonActivity').mActivity
+        WebView = autoclass('android.webkit.WebView')
+        WebViewClient = autoclass('android.webkit.WebViewClient')
+        WebChromeClient = autoclass('android.webkit.WebChromeClient')
+        CookieManager = autoclass('android.webkit.CookieManager')
+        
+        # NOTIFIKASI FIX (WAJIB ADA CHANNEL)
+        Context = autoclass('android.content.Context')
+        NotificationManager = autoclass('android.app.NotificationManager')
+        NotificationChannel = autoclass('android.app.NotificationChannel')
+        NotificationCompat = autoclass('androidx.core.app.NotificationCompat$Builder')
+
+        def show_notif(title, body):
+            try:
+                service = activity.getSystemService(Context.NOTIFICATION_SERVICE)
+                manager = cast(NotificationManager, service)
+                # CHANNEL WAJIB UNTUK ANDROID 8+
+                chan_id = "rosyad_notif_channel"
+                chan = NotificationChannel(chan_id, "Notifikasi Aplikasi", 4) # 4 = IMPORTANCE_HIGH
+                manager.createNotificationChannel(chan)
+                
+                icon = activity.getApplicationInfo().icon
+                builder = NotificationCompat(activity, chan_id)
+                builder.setContentTitle(title)
+                builder.setContentText(body)
+                builder.setSmallIcon(icon)
+                builder.setAutoCancel(True)
+                builder.setPriority(1) # HIGH
+                manager.notify(1, builder.build())
+            except: pass
+
+        class RosyadClient(WebViewClient):
+            @java_method('(Landroid/webkit/WebView;Ljava/lang/String;)Z')
+            def shouldOverrideUrlLoading(self, view, url):
+                if url.startswith("rosyad://notif"):
+                    try:
+                        from urllib.parse import parse_qs, urlparse
+                        parsed = urlparse(url)
+                        params = parse_qs(parsed.query)
+                        t = params.get('t', ['Info'])[0]
+                        b = params.get('b', ['Pesan'])[0]
+                        show_notif(t, b)
                     except: pass
-                    super(RosyadClient, self).onPageFinished(view, url)
+                    return True
+                return False
+            @java_method('(Landroid/webkit/WebView;Ljava/lang/String;)V')
+            def onPageFinished(self, view, url):
+                view.loadUrl(JS_BRIDGE)
+                super(RosyadClient, self).onPageFinished(view, url)
 
-            @run_on_ui_thread
-            def create_view():
-                webview = WebView(activity)
-                settings = webview.getSettings()
-                settings.setJavaScriptEnabled(True)
-                settings.setDomStorageEnabled(True)
-                settings.setMixedContentMode(0)
-                settings.setUserAgentString("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-                CookieManager.getInstance().setAcceptCookie(True)
-                webview.setWebViewClient(RosyadClient())
-                webview.setWebChromeClient(WebChromeClient())
-                webview.loadUrl(TARGET_URL)
-                activity.setContentView(webview)
-            create_view()
-        except: pass
+        @run_on_ui_thread
+        def create_view():
+            webview = WebView(activity)
+            settings = webview.getSettings()
+            settings.setJavaScriptEnabled(True)
+            settings.setDomStorageEnabled(True)
+            settings.setMixedContentMode(0)
+            settings.setUserAgentString("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+            CookieManager.getInstance().setAcceptCookie(True)
+            webview.setWebViewClient(RosyadClient())
+            webview.setWebChromeClient(WebChromeClient())
+            webview.loadUrl(TARGET_URL)
+            activity.setContentView(webview)
+        create_view()
 
 if __name__ == '__main__':
     RosyadWebApp().run()
