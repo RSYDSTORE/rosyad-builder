@@ -1,7 +1,7 @@
 
 [app]
 title = TOP UP GAME MALEO
-package.name = topup.games.maleo
+package.name = topup.game.maleo
 package.domain = com.rosyad
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
@@ -11,7 +11,7 @@ icon.filename = icon.png
 presplash.filename = icon.png
 orientation = portrait
 fullscreen = 1
-android.permissions = INTERNET,ACCESS_NETWORK_STATE,WAKE_LOCK,on,POST_NOTIFICATIONS,ACCESS_FINE_LOCATION,WRITE_EXTERNAL_STORAGE
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,WAKE_LOCK,on,POST_NOTIFICATIONS,ACCESS_FINE_LOCATION,CAMERA,READ_MEDIA_IMAGES
 android.api = 33
 android.minapi = 21
 android.accept_sdk_license = True
