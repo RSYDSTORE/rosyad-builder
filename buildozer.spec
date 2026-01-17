@@ -11,13 +11,12 @@ icon.filename = icon.png
 presplash.filename = icon.png
 orientation = portrait
 fullscreen = 1
-android.permissions = INTERNET,ACCESS_NETWORK_STATE,WAKE_LOCK,on,POST_NOTIFICATIONS,ACCESS_FINE_LOCATION,CAMERA,READ_MEDIA_IMAGES,WRITE_EXTERNAL_STORAGE
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,WAKE_LOCK,POST_NOTIFICATIONS,ACCESS_FINE_LOCATION,READ_MEDIA_IMAGES,WRITE_EXTERNAL_STORAGE
 android.api = 33
 android.minapi = 21
 android.accept_sdk_license = True
 android.archs = arm64-v8a
 android.allow_backup = True
-android.gradle_dependencies = androidx.webkit:webkit:1.4.0
 [buildozer]
 log_level = 2
 warn_on_root = 0
