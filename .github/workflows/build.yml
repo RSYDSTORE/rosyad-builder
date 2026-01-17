@@ -1,29 +1,41 @@
 
 name: Build Rosyad APK
-on: workflow_dispatch
+on:
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
-      - name: Siapkeun Mesin
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libncurses5 libncursesw5 libtinfo5 cmake libffi-dev libssl-dev autoconf libtool openjdk-17-jdk unzip
+          sudo apt-get install -y build-essential git python3-pip python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libncurses5 libncursesw5 libtinfo5 cmake libffi-dev libssl-dev autoconf libtool openjdk-17-jdk zip unzip
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
           pip3 install buildozer==1.5.0 cython==0.29.33 virtualenv
-      - name: Download Icon
-        run: wget -O icon.png "https://lh3.googleusercontent.com/d/181EO8tS_ECc0pO9zzk1lr3MsDh_Pbqu7"
-      - name: Masak APK
+      - name: Build APK
         run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
           yes | buildozer android debug
-      - name: Pindahkeun APK (Fix Double Zip)
+      - name: Prepare Artifact
         run: |
-          mv bin/*.apk .
-      - name: Upload APK
+          mv bin/*.apk app-release.apk
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Rosyad-App
-          path: "*.apk"
+          path: app-release.apk
