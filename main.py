@@ -9,7 +9,7 @@ from kivy.graphics import Color, Rectangle
 
 TARGET_URL = "https://topup-bussid-trucksid-rsyd-store.vercel.app"
 
-# JS BRIDGE
+# JS BRIDGE (Native Notif)
 JS_BRIDGE = """
 javascript:(function() {
     window.show_rosyad_push_notif = function(t, b) {
@@ -24,15 +24,18 @@ class RosyadWebApp(App):
         with self.layout.canvas.before:
             Color(0.08, 0.08, 0.12, 1)
             Rectangle(pos=self.layout.pos, size=Window.size)
+        
+        # Loading with Z-Index trick
         self.loading = Label(text="MEMUAT...", font_size='22sp', bold=True, pos_hint={'center_x':0.5, 'center_y':0.5})
         self.footer = Label(text="RsydStore || All Right Reserved 2024", font_size='12sp', color=(0.5,0.5,0.5,1), pos_hint={'center_x':0.5, 'y':0.02}, size_hint=(1,None), height=50)
+        
         self.layout.add_widget(self.loading)
         self.layout.add_widget(self.footer)
 
         if platform == 'android':
             from jnius import autoclass
             from android.permissions import request_permissions, Permission
-            # SAFE PERMISSIONS ONLY (NO WRITE_EXTERNAL)
+            # SAFE PERMISSIONS
             perms = [
                 Permission.INTERNET, 
                 Permission.POST_NOTIFICATIONS, 
@@ -40,15 +43,16 @@ class RosyadWebApp(App):
                 Permission.CAMERA, 
                 Permission.READ_MEDIA_IMAGES
             ]
-            try:
-                request_permissions(perms)
+            try: request_permissions(perms)
             except: pass
             
             Clock.schedule_once(self.start_webview, 1.5)
         return self.layout
 
     def start_webview(self, dt):
-        Clock.schedule_once(lambda d: self.layout.remove_widget(self.loading), 5.0)
+        # Force remove loading after 8s (Longer for slow network)
+        Clock.schedule_once(lambda d: self.layout.remove_widget(self.loading), 8.0)
+        
         try:
             from jnius import autoclass, cast, PythonJavaClass, java_method
             from android.runnable import run_on_ui_thread
@@ -58,8 +62,9 @@ class RosyadWebApp(App):
             WebViewClient = autoclass('android.webkit.WebViewClient')
             WebChromeClient = autoclass('android.webkit.WebChromeClient')
             CookieManager = autoclass('android.webkit.CookieManager')
+            WebSettings = autoclass('android.webkit.WebSettings')
             
-            # NOTIFICATION (WRAPPED IN TRY-EXCEPT)
+            # NOTIFICATION HANDLER
             def show_notif(title, body):
                 try:
                     Context = autoclass('android.content.Context')
@@ -93,6 +98,12 @@ class RosyadWebApp(App):
                         except: pass
                         return True
                     return False
+                
+                # BYPASS SSL ERROR (CRITICAL FOR BLANK SCREEN FIX)
+                @java_method('(Landroid/webkit/WebView;Landroid/webkit/SslErrorHandler;Landroid/net/http/SslError;)V')
+                def onReceivedSslError(self, view, handler, error):
+                    handler.proceed() # FORCE LOAD
+
                 @java_method('(Landroid/webkit/WebView;Ljava/lang/String;)V')
                 def onPageFinished(self, view, url):
                     try: view.loadUrl(JS_BRIDGE)
@@ -105,9 +116,14 @@ class RosyadWebApp(App):
                 settings = webview.getSettings()
                 settings.setJavaScriptEnabled(True)
                 settings.setDomStorageEnabled(True)
-                settings.setMixedContentMode(0)
+                # ALLOW ALL CONTENT
+                settings.setMixedContentMode(0) 
+                settings.setAllowFileAccess(True)
+                settings.setAllowContentAccess(True)
+                
                 settings.setUserAgentString("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
                 CookieManager.getInstance().setAcceptCookie(True)
+                
                 webview.setWebViewClient(RosyadClient())
                 webview.setWebChromeClient(WebChromeClient())
                 webview.loadUrl(TARGET_URL)
