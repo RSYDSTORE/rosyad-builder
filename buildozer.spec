@@ -1,11 +1,11 @@
 
 [app]
 title = TOP UP GAME MALEO
-package.name = topup.game.maleo
+package.name = top.up.game.maleo
 package.domain = com.rosyad
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
-version = 1.5
+version = 1.3
 requirements = python3,kivy,android,jnius,requests
 icon.filename = icon.png
 presplash.filename = icon.png
