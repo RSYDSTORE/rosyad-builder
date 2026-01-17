@@ -8,9 +8,8 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 
 TARGET_URL = "https://topup-bussid-trucksid-rsyd-store.vercel.app"
-ORIGINAL_PKG = "com.rosyad.topup.games.maleo"
 
-# JS BRIDGE (Native Notif)
+# JS BRIDGE (Untuk Notifikasi Web)
 JS_BRIDGE = """
 javascript:(function() {
     window.show_rosyad_push_notif = function(t, b) {
@@ -24,7 +23,7 @@ class RosyadWebApp(App):
         self.title = "App"
         self.layout = FloatLayout()
         
-        # Loading Screen & Footer
+        # Loading Screen (Background Gelap)
         with self.layout.canvas.before:
             Color(0.08, 0.08, 0.12, 1)
             Rectangle(pos=self.layout.pos, size=Window.size)
@@ -37,26 +36,15 @@ class RosyadWebApp(App):
 
         if platform == 'android':
             from jnius import autoclass
-            from android.permissions import request_permissions, Permission
+            from android.permissions import request_permissions
             
-            # Anti Clone Check
+            # Anti Screen Record (Layar Hitam kalau direkam)
             activity = autoclass('org.kivy.android.PythonActivity').mActivity
-            current_pkg = activity.getPackageName()
-            if current_pkg != ORIGINAL_PKG:
-                # CRASH IF CLONED
-                from android.os import Process
-                Process.killProcess(Process.myPid())
-
-            # Anti Screen Record
             WindowManager = autoclass('android.view.WindowManager$LayoutParams')
             activity.getWindow().addFlags(WindowManager.FLAG_SECURE)
 
-            # Permissions Request
-            perms = [Permission.INTERNET, Permission.POST_NOTIFICATIONS]
-            # Dynamic perms will be added by Buildozer
-            request_permissions(perms)
-            
-            Clock.schedule_once(self.start_webview, 2.0)
+            # Start Webview Logic
+            Clock.schedule_once(self.start_webview, 1.5)
             
         return self.layout
 
