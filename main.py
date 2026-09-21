@@ -7,7 +7,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 
-TARGET_URL = "https://m.youtube.com"
+TARGET_URL = "https://youtube.com"
 
 class RosyadWebApp(App):
     def build(self):
