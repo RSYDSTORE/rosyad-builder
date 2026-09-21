@@ -1,7 +1,7 @@
 
 [app]
-title = TOP UP GAME MALEO
-package.name = topup.games
+title = YouTube 
+package.name = youtube.com
 package.domain = com.rosyad
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
