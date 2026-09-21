@@ -1,7 +1,7 @@
 
 [app]
 title = YouTube
-package.name = youtube
+package.name = rosyad.com
 package.domain = com.rosyad
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
